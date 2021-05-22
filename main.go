@@ -1,7 +1,34 @@
 package main
 
+import "time"
+
 func main() {
-	checkScheduler()
+	scheduler := CheckScheduler{
+		Checks: []CheckSettings{
+			CheckSettings{
+				Name:     "Ping google",
+				Command:  "ping",
+				Args:     []string{"-c 1", "www.google.com"},
+				Env:      []string{""},
+				Dir:      "",
+				Interval: 5 * time.Second,
+				Timeout:  5 * time.Second,
+			}, CheckSettings{
+				Name:     "Ping facebook",
+				Command:  "ping",
+				Args:     []string{"-c 1", "www.facebook.com"},
+				Env:      []string{""},
+				Dir:      "",
+				Interval: 10 * time.Second,
+				Timeout:  5 * time.Second,
+			},
+		},
+	}
+
+	scheduler.Start()
+
+	noExit := make(chan bool)
+	<-noExit
 
 	// var d net.Dialer
 	// ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

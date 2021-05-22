@@ -11,34 +11,45 @@ import (
 )
 
 type CheckSettings struct {
-	Command string
-	Args    []string
-	Stdin   []byte
-	Env     []string
-	Dir     string
-	Timeout time.Duration
+	Name     string
+	Command  string
+	Args     []string
+	Stdin    string
+	Env      []string
+	Dir      string
+	Interval time.Duration
+	Timeout  time.Duration
 }
 
 type CheckScheduler struct {
 	Checks []CheckSettings
 }
 
-func checkScheduler() {
-	checkSettings := CheckSettings{
-		Command: "ping",
-		Args:    []string{"-c 10", "www.google.com"},
-		Env:     []string{""},
-		Dir:     "",
-		Timeout: 5 * time.Second,
+func (s *CheckScheduler) Start() {
+	for _, check := range s.Checks {
+		go checkRunner(check)
 	}
+}
 
+func checkRunner(checkSettings CheckSettings) {
+	fmt.Printf("Scheduling check %s - interval %s\n", checkSettings.Name, checkSettings.Interval)
+	ticker := time.NewTicker(checkSettings.Interval)
+
+	for {
+		t := <-ticker.C
+		fmt.Printf("%s - Running check %s\n", t, checkSettings.Name)
+		runCheck(checkSettings)
+	}
+}
+
+func runCheck(checkSettings CheckSettings) {
 	ctx, cancel := context.WithTimeout(context.Background(), checkSettings.Timeout)
 	defer cancel()
 
 	//Setup check command
 	command := exec.CommandContext(ctx, checkSettings.Command, checkSettings.Args...)
 
-	command.Stdin = bytes.NewReader(checkSettings.Stdin)
+	command.Stdin = bytes.NewBufferString(checkSettings.Stdin)
 	command.Env = checkSettings.Env
 	command.Dir = checkSettings.Dir
 
