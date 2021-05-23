@@ -21,13 +21,17 @@ type CheckSettings struct {
 	Timeout  int64
 }
 
-func StartScheduler(checkSettings map[string]CheckSettings) {
+type CheckResult struct {
+	Status int
+}
+
+func StartScheduler(parentNodeChan chan CheckResult, checkSettings map[string]CheckSettings) {
 	for _, check := range checkSettings {
-		go checkRunner(check)
+		go checkRunner(parentNodeChan, check)
 	}
 }
 
-func checkRunner(checkSettings CheckSettings) {
+func checkRunner(parentNodeChan chan CheckResult, checkSettings CheckSettings) {
 	fmt.Printf("Scheduling check %s - interval %d seconds\n", checkSettings.Name, checkSettings.Interval)
 
 	ticker := time.NewTicker(time.Duration(checkSettings.Interval) * time.Second)
@@ -35,11 +39,11 @@ func checkRunner(checkSettings CheckSettings) {
 	for {
 		t := <-ticker.C
 		fmt.Printf("%s - Running check %s\n", t, checkSettings.Name)
-		runCheck(checkSettings)
+		parentNodeChan <- runCheck(checkSettings)
 	}
 }
 
-func runCheck(checkSettings CheckSettings) {
+func runCheck(checkSettings CheckSettings) CheckResult {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(checkSettings.Timeout)*time.Second)
 	defer cancel()
 
@@ -68,10 +72,16 @@ func runCheck(checkSettings CheckSettings) {
 	if err != nil {
 		//TODO write error to result channel
 		fmt.Println("Error running cmd")
+		// if exitError, ok := err.(*exec.ExitError); ok {
+		// 	exictCode := exitError.ExitCode()
+		// }
 		fmt.Println(err)
 	}
 
 	io.Copy(os.Stdout, stdoutBuf)
 
-	//TODO write to result channel
+	//TODO expand this
+	return CheckResult{
+		Status: 0,
+	}
 }

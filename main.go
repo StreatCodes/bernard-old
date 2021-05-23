@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/gob"
 	"log"
+	"net"
 	"os"
+	"time"
 
 	toml "github.com/pelletier/go-toml"
 )
@@ -17,6 +21,7 @@ type NodeConfig struct {
 }
 
 func main() {
+	//Read config
 	configPath := "./sample.toml"
 	f, err := os.OpenFile(configPath, os.O_RDONLY, 0755)
 	if err != nil {
@@ -30,22 +35,30 @@ func main() {
 		log.Fatalf("Error decoding %s: %s\n", configPath, err)
 	}
 
-	StartScheduler(config.Checks)
+	//Initialise the check scheduler
+	parentNodeChan := make(chan CheckResult)
+	StartScheduler(parentNodeChan, config.Checks)
 
-	noExit := make(chan bool)
-	<-noExit
+	//Connect to parent node
+	var d net.Dialer
+	//TODO improve this context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 
-	// var d net.Dialer
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	// defer cancel()
+	conn, err := d.DialContext(ctx, "tcp", config.ParentNode.Address)
+	if err != nil {
+		log.Fatalf("Failed to connect to %s: %s", config.ParentNode.Address, err)
+	}
+	defer conn.Close()
 
-	// conn, err := d.DialContext(ctx, "tcp", "localhost:12345")
-	// if err != nil {
-	// 	log.Fatalf("Failed to dial: %v", err)
-	// }
-	// defer conn.Close()
-
-	// if _, err := conn.Write([]byte("Hello, World!")); err != nil {
-	// 	log.Fatal(err)
-	// }
+	//Listen on the channel and send check results upstream
+	for {
+		checkResult := <-parentNodeChan
+		encoder := gob.NewEncoder(conn)
+		err := encoder.Encode(checkResult)
+		if err != nil {
+			//TODO don't fatal here
+			log.Fatalf("Error writing result to parent node: %s\n", err)
+		}
+	}
 }

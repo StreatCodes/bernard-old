@@ -1,5 +1,5 @@
 [ParentNode]
-Address = "streats.dev"
+Address = "localhost:8888"
 
 [Checks.PingGoogle]
 Name = "Ping www.google.com"
