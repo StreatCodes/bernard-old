@@ -1,31 +1,36 @@
 package main
 
-import "time"
+import (
+	"log"
+	"os"
+
+	toml "github.com/pelletier/go-toml"
+)
+
+type Config struct {
+	ParentNode NodeConfig
+	Checks     map[string]CheckSettings
+}
+
+type NodeConfig struct {
+	Address string
+}
 
 func main() {
-	scheduler := CheckScheduler{
-		Checks: []CheckSettings{
-			CheckSettings{
-				Name:     "Ping google",
-				Command:  "ping",
-				Args:     []string{"-c 1", "www.google.com"},
-				Env:      []string{""},
-				Dir:      "",
-				Interval: 5 * time.Second,
-				Timeout:  5 * time.Second,
-			}, CheckSettings{
-				Name:     "Ping facebook",
-				Command:  "ping",
-				Args:     []string{"-c 1", "www.facebook.com"},
-				Env:      []string{""},
-				Dir:      "",
-				Interval: 10 * time.Second,
-				Timeout:  5 * time.Second,
-			},
-		},
+	configPath := "./sample.toml"
+	f, err := os.OpenFile(configPath, os.O_RDONLY, 0755)
+	if err != nil {
+		log.Fatalf("Error opening %s: %s\n", configPath, err)
 	}
 
-	scheduler.Start()
+	var config Config
+	dec := toml.NewDecoder(f)
+	err = dec.Decode(&config)
+	if err != nil {
+		log.Fatalf("Error decoding %s: %s\n", configPath, err)
+	}
+
+	StartScheduler(config.Checks)
 
 	noExit := make(chan bool)
 	<-noExit

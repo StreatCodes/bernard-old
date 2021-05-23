@@ -1,0 +1,20 @@
+[ParentNode]
+Address = "streats.dev"
+
+[Checks.PingGoogle]
+Name = "Ping www.google.com"
+Command = "ping"
+Args = ["-c 1", "www.google.com"]
+Env = [""]
+Dir = ""
+Interval = 5
+Timeout = 5
+
+[Checks.PingFacebook]
+Name = "Ping facebook"
+Command = "ping"
+Args = ["-c 1", "www.facebook.com"]
+Env = [""]
+Dir = ""
+Interval = 10
+Timeout = 5

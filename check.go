@@ -17,23 +17,20 @@ type CheckSettings struct {
 	Stdin    string
 	Env      []string
 	Dir      string
-	Interval time.Duration
-	Timeout  time.Duration
+	Interval int64
+	Timeout  int64
 }
 
-type CheckScheduler struct {
-	Checks []CheckSettings
-}
-
-func (s *CheckScheduler) Start() {
-	for _, check := range s.Checks {
+func StartScheduler(checkSettings map[string]CheckSettings) {
+	for _, check := range checkSettings {
 		go checkRunner(check)
 	}
 }
 
 func checkRunner(checkSettings CheckSettings) {
-	fmt.Printf("Scheduling check %s - interval %s\n", checkSettings.Name, checkSettings.Interval)
-	ticker := time.NewTicker(checkSettings.Interval)
+	fmt.Printf("Scheduling check %s - interval %d seconds\n", checkSettings.Name, checkSettings.Interval)
+
+	ticker := time.NewTicker(time.Duration(checkSettings.Interval) * time.Second)
 
 	for {
 		t := <-ticker.C
@@ -43,7 +40,7 @@ func checkRunner(checkSettings CheckSettings) {
 }
 
 func runCheck(checkSettings CheckSettings) {
-	ctx, cancel := context.WithTimeout(context.Background(), checkSettings.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(checkSettings.Timeout)*time.Second)
 	defer cancel()
 
 	//Setup check command
