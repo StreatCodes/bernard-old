@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/gob"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"time"
 
 	toml "github.com/pelletier/go-toml"
+	"github.com/streatcodes/bernard"
 )
 
 type Config struct {
@@ -18,6 +20,7 @@ type Config struct {
 
 type NodeConfig struct {
 	Address string
+	Key     string
 }
 
 func main() {
@@ -36,7 +39,7 @@ func main() {
 	}
 
 	//Initialise the check scheduler
-	parentNodeChan := make(chan CheckResult)
+	parentNodeChan := make(chan bernard.CheckResult)
 	StartScheduler(parentNodeChan, config.Checks)
 
 	//Connect to parent node
@@ -51,10 +54,16 @@ func main() {
 	}
 	defer conn.Close()
 
+	err = authToServer(config, conn)
+	if err != nil {
+		log.Fatalf("Failed to auth to server: %s\n", err)
+	}
+	fmt.Println("Authenticated with server")
+
 	//Listen on the channel and send check results upstream
-	for {
-		checkResult := <-parentNodeChan
-		encoder := gob.NewEncoder(conn)
+	for checkResult := range parentNodeChan {
+		encoder := json.NewEncoder(conn)
+		// fmt.Printf("Sending %+v\n", checkResult)
 		err := encoder.Encode(checkResult)
 		if err != nil {
 			//TODO don't fatal here
