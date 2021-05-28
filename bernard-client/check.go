@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -52,31 +53,33 @@ func runCheck(checkSettings CheckSettings) bernard.CheckResult {
 	stdoutBuf := bytes.NewBuffer(make([]byte, 4096))
 	command.Stdout = stdoutBuf
 
-	stderrBuf := bytes.NewBuffer(make([]byte, 4096))
-	command.Stderr = stderrBuf
-
 	//Exec check command
 	err := command.Start()
 	if err != nil {
-		//TODO write error to result channel
-		fmt.Println("Error starting cmd")
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "Error starting command (%s) - %s", checkSettings.Name, err)
+
+		return bernard.CheckResult{
+			Status: -1,
+			Output: stdoutBuf.String(),
+		}
 	}
 
+	//Get result
 	err = command.Wait()
 	if err != nil {
-		//TODO write error to result channel
-		fmt.Println("Error running cmd")
-		// if exitError, ok := err.(*exec.ExitError); ok {
-		// 	exictCode := exitError.ExitCode()
-		// }
-		fmt.Println(err)
+		exitCode := -1
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
+		}
+		fmt.Fprintf(os.Stderr, "Command exited with %d (%s) - %s", exitCode, checkSettings.Name, err)
+		return bernard.CheckResult{
+			Status: exitCode,
+			Output: stdoutBuf.String(),
+		}
 	}
 
-	// io.Copy(os.Stdout, stdoutBuf)
-
-	//TODO expand this
 	return bernard.CheckResult{
 		Status: 0,
+		Output: stdoutBuf.String(),
 	}
 }
