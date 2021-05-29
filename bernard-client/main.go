@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
@@ -56,13 +56,15 @@ func main() {
 
 	err = authToServer(config, conn)
 	if err != nil {
-		log.Fatalf("Failed to auth to server: %s\n", err)
+		log.Fatalf("Failed to init auth with server: %s\n", err)
 	}
+
+	//TODO we should receive an ACK before assuming a successful auth
 	fmt.Println("Authenticated with server")
 
 	//Listen on the channel and send check results upstream
+	encoder := gob.NewEncoder(conn)
 	for checkResult := range parentNodeChan {
-		encoder := json.NewEncoder(conn)
 		// fmt.Printf("Sending %+v\n", checkResult)
 		err := encoder.Encode(checkResult)
 		if err != nil {

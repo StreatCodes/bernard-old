@@ -3,6 +3,5 @@
 Easily monitor your infrastructure.
 
 ## TODO
- - define a check e.g. exit codes, stdout, perf data?
- - add log level to bernard-server
- - block incorrect auth IP address's
+ - Auth should return result before closing connection
+ - Document a check (include a way to graph data)

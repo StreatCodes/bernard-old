@@ -7,3 +7,5 @@ Key = """\
     38f54ab2ac81ec7dcd08dfcbdfa01c256ac3a63afb8ef2df31577f574f27f34a\
     6a1e36cc5a167a4e17301db78baa4af3e6475559bf9590eccc8fe354045242b6\
     d1a88903d3981fe65e4ee11af48716b198054effd9315aa011f76dd472ba44b7"""
+
+ListenAddr = "localhost:8888"

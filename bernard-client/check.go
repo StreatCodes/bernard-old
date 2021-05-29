@@ -50,8 +50,8 @@ func runCheck(checkSettings CheckSettings) bernard.CheckResult {
 	command.Stdin = bytes.NewBufferString(checkSettings.Stdin)
 	command.Env = checkSettings.Env
 	command.Dir = checkSettings.Dir
-	stdoutBuf := bytes.NewBuffer(make([]byte, 4096))
-	command.Stdout = stdoutBuf
+	var stdoutBuf bytes.Buffer
+	command.Stdout = &stdoutBuf
 
 	//Exec check command
 	err := command.Start()
@@ -60,7 +60,7 @@ func runCheck(checkSettings CheckSettings) bernard.CheckResult {
 
 		return bernard.CheckResult{
 			Status: -1,
-			Output: stdoutBuf.String(),
+			Output: stdoutBuf.Next(4096),
 		}
 	}
 
@@ -74,12 +74,12 @@ func runCheck(checkSettings CheckSettings) bernard.CheckResult {
 		fmt.Fprintf(os.Stderr, "Command exited with %d (%s) - %s", exitCode, checkSettings.Name, err)
 		return bernard.CheckResult{
 			Status: exitCode,
-			Output: stdoutBuf.String(),
+			Output: stdoutBuf.Next(4096),
 		}
 	}
 
 	return bernard.CheckResult{
 		Status: 0,
-		Output: stdoutBuf.String(),
+		Output: stdoutBuf.Next(4096),
 	}
 }
