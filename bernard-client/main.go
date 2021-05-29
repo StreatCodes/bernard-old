@@ -54,16 +54,28 @@ func main() {
 	}
 	defer conn.Close()
 
+	//Authenticate with server
 	err = authToServer(config, conn)
 	if err != nil {
 		log.Fatalf("Failed to init auth with server: %s\n", err)
 	}
 
-	//TODO we should receive an ACK before assuming a successful auth
+	decoder := gob.NewDecoder(conn)
+	encoder := gob.NewEncoder(conn)
+
+	var authResult bernard.AuthResult
+	err = decoder.Decode(&authResult)
+	if err != nil {
+		log.Fatalf("Failed to decode auth result from server: %s\n", err)
+	}
+
+	if !authResult.Success {
+		log.Fatalln("Failed to authenticate with server")
+	}
+
 	fmt.Println("Authenticated with server")
 
 	//Listen on the channel and send check results upstream
-	encoder := gob.NewEncoder(conn)
 	for checkResult := range parentNodeChan {
 		// fmt.Printf("Sending %+v\n", checkResult)
 		err := encoder.Encode(checkResult)

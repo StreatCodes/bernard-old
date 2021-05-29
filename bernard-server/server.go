@@ -66,13 +66,23 @@ func (s *Server) handleConnection(conn net.Conn) {
 	}
 
 	//Verify client key
+	encoder := gob.NewEncoder(conn)
 	err = AuthClient(s.Config, conn)
 	if err != nil {
 		fmt.Printf("Failed to auth new connection: %s\n", err)
 		s.ThrottleList.FailedAttempt(client)
+
+		err = encoder.Encode(bernard.AuthResult{Success: false})
+		if err != nil {
+			fmt.Printf("Failed to write auth result to client: %s\n", err)
+		}
 		return
 	}
 
+	err = encoder.Encode(bernard.AuthResult{Success: true})
+	if err != nil {
+		fmt.Printf("Failed to write auth result to client: %s\n", err)
+	}
 	fmt.Printf("Client authenticated: %s\n", client)
 
 	//Read incoming check results
