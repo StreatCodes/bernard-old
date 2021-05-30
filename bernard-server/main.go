@@ -2,21 +2,22 @@ package main
 
 import (
 	"log"
-	"time"
 )
 
 type Config struct {
-	Key        string
-	ListenAddr string
+	Key                 string
+	ListenAddr          string
+	AuthAttemptsAllowed int
+	AuthTimeout         int
 }
 
 func main() {
-	t := make(map[string][]time.Time)
-	_ = len(t)
-	server := Server{
-		ThrottleList: ThrottleList{connAttempts: make(map[string][]time.Time)},
+	server, err := NewServer("./sample.toml")
+	if err != nil {
+		log.Fatalln(err)
 	}
-	err := server.Init("./sample.toml")
+
+	err = server.Listen()
 	if err != nil {
 		log.Fatalln(err)
 	}

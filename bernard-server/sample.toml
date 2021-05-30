@@ -9,3 +9,6 @@ Key = """\
     d1a88903d3981fe65e4ee11af48716b198054effd9315aa011f76dd472ba44b7"""
 
 ListenAddr = "localhost:8888"
+
+AuthAttemptsAllowed = 5
+AuthTimeout = 60

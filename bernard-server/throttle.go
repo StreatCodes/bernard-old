@@ -5,13 +5,20 @@ import (
 	"time"
 )
 
-//TODO move to config
-const ATTEMPTS_ALLOWED = 5
-const TIMEOUT_TIME = time.Minute
-
 type ThrottleList struct {
-	connAttempts map[string][]time.Time
-	lock         sync.Mutex
+	connAttempts    map[string][]time.Time
+	lock            sync.Mutex
+	attemptsAllowed int
+	timeoutTime     time.Duration
+}
+
+func NewThrottleList(attemptsAllowed int, timeoutTime time.Duration) ThrottleList {
+	return ThrottleList{
+		connAttempts:    make(map[string][]time.Time),
+		lock:            sync.Mutex{},
+		attemptsAllowed: attemptsAllowed,
+		timeoutTime:     timeoutTime,
+	}
 }
 
 //Keep track of failed connection attempts
@@ -20,7 +27,7 @@ func (tl *ThrottleList) FailedAttempt(addr string) {
 	defer tl.lock.Unlock()
 
 	attempts := tl.connAttempts[addr]
-	if len(attempts) == ATTEMPTS_ALLOWED {
+	if len(attempts) == tl.attemptsAllowed {
 		attempts = append(attempts[1:], time.Now())
 	} else {
 		attempts = append(attempts, time.Now())
@@ -36,7 +43,7 @@ func (tl *ThrottleList) IsThrottled(addr string) bool {
 
 	attempts := tl.connAttempts[addr]
 
-	timeout := time.Now().Add(-TIMEOUT_TIME)
+	timeout := time.Now().Add(-tl.timeoutTime)
 	failedCount := 0
 	for _, attempt := range attempts {
 		if attempt.After(timeout) {
@@ -44,5 +51,5 @@ func (tl *ThrottleList) IsThrottled(addr string) bool {
 		}
 	}
 
-	return failedCount >= ATTEMPTS_ALLOWED
+	return failedCount >= tl.attemptsAllowed
 }

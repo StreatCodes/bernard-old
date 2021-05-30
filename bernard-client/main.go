@@ -44,7 +44,6 @@ func main() {
 
 	//Connect to parent node
 	var d net.Dialer
-	//TODO improve this context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -80,7 +79,6 @@ func main() {
 		// fmt.Printf("Sending %+v\n", checkResult)
 		err := encoder.Encode(checkResult)
 		if err != nil {
-			//TODO don't fatal here
 			log.Fatalf("Error writing result to parent node: %s\n", err)
 		}
 	}

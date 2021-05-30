@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/pelletier/go-toml"
 	"github.com/streatcodes/bernard"
@@ -15,20 +16,28 @@ type Server struct {
 	ThrottleList ThrottleList
 }
 
-func (s *Server) Init(configPath string) error {
+func NewServer(configPath string) (*Server, error) {
+	s := &Server{}
+
 	//Read config
 	f, err := os.OpenFile(configPath, os.O_RDONLY, 0755)
 	if err != nil {
-		return fmt.Errorf("error opening %s: %s", configPath, err)
+		return nil, fmt.Errorf("error opening %s: %s", configPath, err)
 	}
 
 	dec := toml.NewDecoder(f)
 	err = dec.Decode(&s.Config)
 	if err != nil {
-		return fmt.Errorf("error decoding %s: %s", configPath, err)
+		return nil, fmt.Errorf("error decoding %s: %s", configPath, err)
 	}
 
-	//Start server
+	//Create ThrottleList
+	s.ThrottleList = NewThrottleList(s.Config.AuthAttemptsAllowed, time.Duration(s.Config.AuthTimeout)*time.Second)
+
+	return s, nil
+}
+
+func (s *Server) Listen() error {
 	fmt.Printf("Listening on %s\n", s.Config.ListenAddr)
 	l, err := net.Listen("tcp", s.Config.ListenAddr)
 	if err != nil {
