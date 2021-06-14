@@ -1,2 +1,4 @@
 /bernard-client/bernard-client
 /bernard-server/bernard-server
+node_modules
+/bernard-web/www/bundle.js*

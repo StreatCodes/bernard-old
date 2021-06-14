@@ -1,0 +1,17 @@
+{
+  "name": "bernard-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "esbuild src/index.jsx --outfile=www/bundle.js --bundle --jsx-factory=h --jsx-fragment=Fragment --serve=localhost:8000 --servedir=www --sourcemap",
+    "prod": "esbuild src/index.jsx --outfile=www/bundle.js --bundle --jsx-factory=h --jsx-fragment=Fragment --minify --sourcemap"
+  },
+  "author": "Streats",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.12.8",
+    "preact": "^10.5.13",
+    "preact-router": "^3.2.1"
+  }
+}
