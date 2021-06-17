@@ -3,21 +3,21 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/pelletier/go-toml"
 	"github.com/streatcodes/bernard"
-	bolt "go.etcd.io/bbolt"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Server struct {
 	Config       Config
 	ThrottleList ThrottleList
-	DB           *bolt.DB
+	DB           *sqlx.DB
 }
 
 func NewServer(configPath string) (*Server, error) {
@@ -39,11 +39,15 @@ func NewServer(configPath string) (*Server, error) {
 	s.ThrottleList = NewThrottleList(s.Config.AuthAttemptsAllowed, time.Duration(s.Config.AuthTimeout)*time.Second)
 
 	//Connect to DB
-	s.DB, err = bolt.Open(s.Config.DBPath, 0666, nil)
+	s.DB, err = sqlx.Open("sqlite3", s.Config.DBPath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading DB %s: %s", s.Config.DBPath, err)
 	}
-	// defer db.Close() TODO proper shutdown
+
+	_, err = s.DB.Exec(`PRAGMA foreign_keys;`)
+	if err != nil {
+		return nil, fmt.Errorf("error configuring DB: %s", err)
+	}
 
 	return s, nil
 }
@@ -117,25 +121,4 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		fmt.Printf("Check result from %s - status %d:\n%s\n", client, checkResult.Status, checkResult.Output)
 	}
-}
-
-func (s *Server) ListenHTTP() error {
-	fmt.Printf("Listening on %s\n", s.Config.HTTPListenAddr)
-	http.HandleFunc("/", fileHandler)
-	http.HandleFunc("/auth", authHandler)
-	http.HandleFunc("/connect", websocketHandler)
-
-	return http.ListenAndServe(s.Config.HTTPListenAddr, nil)
-}
-
-func fileHandler(w http.ResponseWriter, _ *http.Request) {
-	io.WriteString(w, "Hello from fileHandler!\n")
-}
-
-func authHandler(w http.ResponseWriter, _ *http.Request) {
-	io.WriteString(w, "Hello from authHandler!\n")
-}
-
-func websocketHandler(w http.ResponseWriter, _ *http.Request) {
-	io.WriteString(w, "Hello from websocketHandler!\n")
 }

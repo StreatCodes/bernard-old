@@ -4,13 +4,8 @@ Easily monitor your infrastructure.
 
 ## TODO
  - Extend Server
-   - Attach a bbolt DB
-   - Create http server
-   - create auth endpoint
-   - create websocket
    - send all info on websocket connect
    - support creating/updating hosts, users
-   - add roles to users
 
   - Frontend
     - Render hosts,

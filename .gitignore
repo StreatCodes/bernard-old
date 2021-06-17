@@ -1,5 +1,7 @@
 /bernard-client/bernard-client
 /bernard-server/bernard-server
-/bernard-server/bernard.db
+/bernard-setup/bernard-setup
+bernard.db
 node_modules
 /bernard-web/www/bundle.js*
+/bernard-server/www
